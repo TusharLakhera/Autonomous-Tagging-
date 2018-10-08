@@ -2,7 +2,12 @@
 import pandas as shortpanda
 import numpy as shortnum
 import re
+import nltk
+from nltk import word_tokenize, sent_tokenize
+from nltk.corpus import stopwords
 import datetime
+import unicodedata
+import inflect
 from collections import Counter
 from bs4 import BeautifulSoup
 #reading CSV Data
@@ -19,9 +24,10 @@ print(CreationDateList)
 
 #finding the week number
 Week= datetime.date(2014,4,17).isocalendar()[1]
+Week= datetime.date(2012,6,12).isocalendar()[1]
+
 
 #counting the number of most frequent word in Title Data
-
 Titlelist=QuestionData.Title.tolist()
 
 print(Titlelist)
@@ -39,39 +45,112 @@ with open('TitleData.txt') as titlefile:
     Bodylist=QuestionData.Body.tolist() # list of unproceesed question data
 #Using BeautifulSoup for Noise Removal
     
-    #for cleaning HTML headers
+#for cleaning HTML headers
+with open('SampleBodyData.txt') as Datafile:
+         text=Datafile.read()
+        
    
-    def HTML_ClEAN(text):
-        TrimData=BeautifulSoup(text,'html.parser')
-        return TrimData.get_text
+def HTML_ClEAN(text):
+        
+    soup=BeautifulSoup(text,'html.parser')
+    return soup.get_text
         
    # for removing  unnecessary code snippets, ,links, URL...
-    def remove_CodeSnippet(text):
+def remove_CodeSnippet(text):
       
-        return re.sub('<pre><code>.*?</code></pre>', '', text)
+    return re.sub('<pre><code>.*?</code></pre>', '', text)
    
-    def remove_Para(text):
-      
-        return re.sub('</p>\\n\\n<p>', '', text)
     
-    with open('BodyData.txt') as Datafile:
-        DataRead=Datafile.read()
+    
+    #replacing paragraph and next line headers with a blank string
+def remove_Para(text):
+      
+    text= re.sub('</p>', '', text)
+    text=  re.sub('\\n', '', text)
+    text=  re.sub('<p>', '', text)
+    return text
+    
+      
+  
+#implementing the De-noise Functions to clean the SampleData
+def De_noise(text):
+    text=  HTML_ClEAN(text)
+    text= remove_CodeSnippet(text)
+    text= remove_Para(text)
+    return text
+
         
-        HTML_ClEAN(DataRead)
-        remove_CodeSnippet(DataRead)
-        remove_Para(DataRead)
      
-      
-
-
-
-      
         
+#Non-Ascii Words are ignored for better accuracy purpose        
+def is_Non_Ascii(ProcessedSampleBodyData):
+    NewProcessedSampleBodyData = []
+    for word in ProcessedSampleBodyData:
+       temp = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore').decode('utf-8', 'ignore')
+       NewProcessedSampleBodyData.append(temp)
+    return NewProcessedSampleBodyData
+
+#converting everyword to lowercase to remove redundancy for ex-is & IS
+def Case_lower(ProcessedSampleBodyData):
+    NewProcessedSampleBodyData = []
+    for word in ProcessedSampleBodyData:
+        Temp = word.lower()
+        NewProcessedSampleBodyData.append(Temp)
+    return NewProcessedSampleBodyData
+
+#removing Punctuation like,0-;] for better data quality
+def TextClean(ProcessedSampleBodyData):
+    NewProcessedSampleBodyData = []
+    for word in ProcessedSampleBodyData:
+        temp = re.sub(r'[^\w\s]', '', word)
+        if  NewProcessedSampleBodyData != '':
+             NewProcessedSampleBodyData .append(temp)
+    return  NewProcessedSampleBodyData 
+
+#removing Numbers for better tag prediction
+def Number_Removal(ProcessedSampleBodyData):
+    use = inflect.engine()
+    NewProcessedSampleBodyData = []
+    for word in ProcessedSampleBodyData:
+        if word.isdigit():
+          temp  = use.number_to_words(word)
+          NewProcessedSampleBodyData.append(temp)
+        else:
+            NewProcessedSampleBodyData.append(word)
+    return NewProcessedSampleBodyData
+
+#filtering out StopWords to before processing natural data
+def StopWord_Removal(ProcessedSampleBodyData):
     
+     NewProcessedSampleBodyData = []
+     for word in ProcessedSampleBodyData:
+        if word not in stopwords.words('english'):
+           NewProcessedSampleBodyData.append(word)
+     return  NewProcessedSampleBodyData
+
+
+
+def WordProcessing(Body_word):
+
+    Body_word=is_Non_Ascii(Body_word)
+    Body_word=Case_lower(Body_word)
+    Body_word=TextClean(Body_word)
+    Body_word=Number_Removal(Body_word)
+    Body_word=StopWord_Removal(Body_word)
+
+    return Body_word
     
   
+    DataText= De_noise(text)
+    #Tokenising the sampledata
+    #Tokenising is converting text to words
+    ProcessedSampleBodyData = nltk.word_tokenize(text)
+    print( ProcessedSampleBodyData)
+ 
+    #BodyWordCount=Counter(ProcessedSampleBodyData)
+       
+    ProcessedBodyWord= WordProcessing(ProcessedSampleBodyData)
+
+    count=Counter( ProcessedBodyWord)
     
-
-
-
 
