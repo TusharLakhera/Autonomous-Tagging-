@@ -1,0 +1,1 @@
+total = total[(total.Tag == 'c#') | (total.Tag == 'java') | (total.Tag == 'php') | (total.Tag =='javascript') | (total.Tag =='jquery') | (total.Tag == 'android') | (total.Tag == 'c++') | (total.Tag == 'iphone') | (total.Tag == 'python') | (total.Tag == 'asp.net')]
