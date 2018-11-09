@@ -11,13 +11,13 @@ import inflect
 from collections import Counter
 from bs4 import BeautifulSoup
 #reading CSV Data
-QuestionData =shortpanda.read_csv('Questions.csv',encoding='latin-1')
-TagsData=shortpanda.read_csv('Tags.csv')
+QuestionData =shortpanda.read_csv('Questions.csv (1).zip',encoding='latin-1')
+TagsData=shortpanda.read_csv('Tags.csv.zip')
 #creating a list of Tags from TagsData
 Taglist=TagsData.Tag.tolist()
 #creating a list of Tags from TagsData
 SortedTaglist=Counter(Taglist)
-print(SortedTaglist) #analyzing whether the Data is sorted or not
+print(SortedTaglist)  #analyzing whether the Data is sorted or not
 list(QuestionData)
 CreationDateList=QuestionData.CreationDate.tolist()
 print(CreationDateList)
@@ -33,7 +33,7 @@ Titlelist=QuestionData.Title.tolist()
 print(Titlelist)
 
 
-with open('TitleData.txt') as titlefile:
+with open('TempData.txt') as titlefile:
     TitleRead=titlefile.read()
     Words = re.findall(r'\w+', TitleRead)
    
@@ -47,7 +47,7 @@ with open('TitleData.txt') as titlefile:
     
 #for cleaning HTML headers
 with open('SampleBodyData.txt') as Datafile:
-         text=Datafile.read()
+         text=Datafile.read()  
         
    
 def HTML_ClEAN(text):
@@ -55,33 +55,30 @@ def HTML_ClEAN(text):
     soup=BeautifulSoup(text,'html.parser')
     return soup.get_text
         
+
    # for removing  unnecessary code snippets, ,links, URL...
 def remove_CodeSnippet(text):
       
-    return re.sub('<pre><code>.*?</code></pre>', '', text)
-   
-    
+    return re.sub('<pre><code>.*?</code></pre>', '', str(text))
+
     
     #replacing paragraph and next line headers with a blank string
 def remove_Para(text):
       
-    text= re.sub('</p>', '', text)
-    text=  re.sub('\\n', '', text)
-    text=  re.sub('<p>', '', text)
+    text= re.sub('</p>', '', str(text))
+    text=  re.sub('\\n', '', str(text))
+    text=  re.sub('<p>', '', str(text))
     return text
-    
       
   
 #implementing the De-noise Functions to clean the SampleData
 def De_noise(text):
-    text=  HTML_ClEAN(text)
+    text= HTML_ClEAN(text)
     text= remove_CodeSnippet(text)
     text= remove_Para(text)
     return text
+         
 
-        
-     
-        
 #Non-Ascii Words are ignored for better accuracy purpose        
 def is_Non_Ascii(ProcessedSampleBodyData):
     NewProcessedSampleBodyData = []
@@ -89,6 +86,7 @@ def is_Non_Ascii(ProcessedSampleBodyData):
        temp = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore').decode('utf-8', 'ignore')
        NewProcessedSampleBodyData.append(temp)
     return NewProcessedSampleBodyData
+
 
 #converting everyword to lowercase to remove redundancy for ex-is & IS
 def Case_lower(ProcessedSampleBodyData):
@@ -98,14 +96,16 @@ def Case_lower(ProcessedSampleBodyData):
         NewProcessedSampleBodyData.append(Temp)
     return NewProcessedSampleBodyData
 
+
 #removing Punctuation like,0-;] for better data quality
 def TextClean(ProcessedSampleBodyData):
     NewProcessedSampleBodyData = []
     for word in ProcessedSampleBodyData:
-        temp = re.sub(r'[^\w\s]', '', word)
+        temp = re.sub(r'[^\w\s]', '', str(word))
         if  NewProcessedSampleBodyData != '':
              NewProcessedSampleBodyData .append(temp)
     return  NewProcessedSampleBodyData 
+
 
 #removing Numbers for better tag prediction
 def Number_Removal(ProcessedSampleBodyData):
@@ -119,6 +119,8 @@ def Number_Removal(ProcessedSampleBodyData):
             NewProcessedSampleBodyData.append(word)
     return NewProcessedSampleBodyData
 
+nltk.download('stopwords')
+
 #filtering out StopWords to before processing natural data
 def StopWord_Removal(ProcessedSampleBodyData):
     
@@ -127,7 +129,6 @@ def StopWord_Removal(ProcessedSampleBodyData):
         if word not in stopwords.words('english'):
            NewProcessedSampleBodyData.append(word)
      return  NewProcessedSampleBodyData
-
 
 
 def WordProcessing(Body_word):
@@ -139,9 +140,14 @@ def WordProcessing(Body_word):
     Body_word=StopWord_Removal(Body_word)
 
     return Body_word
-    
   
-    DataText= De_noise(text)
+    detext= De_noise(text)   
+    print(detext)
+    newtext= WordProcessing(detext) 
+    print(newtext)
+    
+    nltk.download('punkt')
+    
     #Tokenising the sampledata
     #Tokenising is converting text to words
     ProcessedSampleBodyData = nltk.word_tokenize(text)
@@ -152,5 +158,4 @@ def WordProcessing(Body_word):
     ProcessedBodyWord= WordProcessing(ProcessedSampleBodyData)
 
     count=Counter( ProcessedBodyWord)
-    
-
+    print(count)
