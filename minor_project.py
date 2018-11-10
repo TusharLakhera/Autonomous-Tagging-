@@ -11,8 +11,8 @@ import inflect
 from collections import Counter
 from bs4 import BeautifulSoup
 #reading CSV Data
-QuestionData =shortpanda.read_csv('Questions.csv (1).zip',encoding='latin-1')
-TagsData=shortpanda.read_csv('Tags.csv.zip')
+QuestionData =shortpanda.read_csv('Questions.csv',encoding='latin-1')
+TagsData=shortpanda.read_csv('Tags.csv')
 #creating a list of Tags from TagsData
 Taglist=TagsData.Tag.tolist()
 #creating a list of Tags from TagsData
