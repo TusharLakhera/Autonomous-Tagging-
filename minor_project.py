@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov 17 14:57:53 2018
+
+@author: Naman Kalra
+"""
+
 import pandas as pd
 from collections import Counter
 import string
@@ -101,10 +108,7 @@ def WordProcessing(Body_word):
     return Body_word
 
 Questions['Text']=Questions['Body'].apply(text_clean).str.lower()
-Questions['Text']=Questions['Text'].apply(De_noise)
-Questions['Text']=Questions['Text'].apply(WordProcessing)
-Questions.Text=Questions.Text.apply(lambda x:x.replace('"','').replace("\n","").replace("\t",""))
-Questions.Text[0]
+
 TagData.Tag.nunique()
 MostCommonTagCount=Counter(list(TagData.Tag)).most_common(40)
 print(MostCommonTagCount)
@@ -116,14 +120,13 @@ TextandTags=TagData.merge(Questions,on='Id')
 TextandTags.Tag
 TextandTags.Text
 
-#TextandTags.to_csv("output.csv", index=False)
 UnnecessaryColumns=['Id','OwnerUserId', 'CreationDate', 'ClosedDate', 'Score', 'Title', 'Body']
 TextandTags=TextandTags.drop( UnnecessaryColumns,axis=1,inplace=False)
-TextandTags.Tag
 Categories = TextandTags['Tag'].unique()
+print(Categories)
 
-fig = plt.figure(figsize=(11,6))
-BalTextandTags.groupby('Tag').Text.count().plot.bar(ylim=0)
+graph = plt.figure(figsize=(11,6))
+TextandTags.groupby('Tag').Text.count().plot.bar(ylim=0)
 plt.show()
 
 TextandTags = pd.DataFrame(TextandTags)
@@ -132,15 +135,21 @@ BalTextandTags = pd.DataFrame(BalTextandTags.apply(lambda x: x.sample(BalTextand
 BalTextandTags.head()
 BalTextandTags.Tag
 
+BalTextandTags.to_csv("output.csv", index=False)
+
+#BalTextandTags['Text']=BalTextandTags['Text'].apply(De_noise)
+#BalTextandTags['Text']=BalTextandTags['Text'].apply(WordProcessing)
+BalTextandTags.Text=BalTextandTags.Text.apply(lambda x:x.replace('"','').replace("\n","").replace("\t",""))
+BalTextandTags.Text[0]
 
 MostCommonTagCount=Counter(list(BalTextandTags.Tag)).most_common(11)
 print(MostCommonTagCount)
 
-
-
 from sklearn.model_selection import train_test_split
 X_train,X_test,Y_train,Y_test=train_test_split(BalTextandTags['Text'],BalTextandTags['Tag'],random_state=42,
                                                test_size=0.2,shuffle=True)
+
+
 
 def Convert_to_MB(Dataset):
     Result=sum(len(s.encode('utf-8'))for s in Dataset)/ 1e6
@@ -152,7 +161,6 @@ print("%d documents - %0.3fMB (training set)" % (
 print("%d documents - %0.3fMB (test set)" % (
     len(X_test),Test_MB_size))
 print("%d Categories" % len(Categories))
-print()
 
 from optparse import OptionParser
 options = OptionParser()
@@ -196,68 +204,105 @@ else:
 TimeTakenTrain = time()-tnought
 print("done in %fs at %0.3fMB/s" % (TimeTakenTrain, Train_MB_size / TimeTakenTrain))
 print("n_samples: %d, n_features: %d" % X_train_new.shape)
-print()
+
 #using the vectoriser for the test data now
 tnought=time()
 X_test_new=Vectorizer.transform(X_test)
 TimeTakenTest= time()-tnought
 print("done in %fs at %0.3fMB/s" % (TimeTakenTest, Test_MB_size / TimeTakenTest))
 print("n_samples: %d, n_features: %d" % X_test_new.shape)
-print()
-#chi square test for conversion of Integer feature name to 
-#original String Token Name
-from sklearn.feature_selection import SelectKBest, chi2
-if options.use_hashing:
-    feature_names=None
-else:
-    feature_names=Vectorizer.get_feature_names()
- 
-if opts.select_chi2:
-    print("Extracting %d bestfeatures from chi-squared test"
-          % opts.select_chi2)
-    
-    options.add_option("--chi2_select",
-              action="store", type="int", dest="select_chi2",
-              help="Select some number of features using a chi-squared test")
-    tnought=time()
-    ch2=SelectKBest(chi2,k=opts.select_chi2)
-    X_train_new=ch2.fit_transform(X_train_new,Y_train)
-    X_test_new=ch2.transform(X_test_new)
-    if feature_names:
-        feature_names= [feature_names[i] for i
-                        in ch2.get_support(indices=True)]
-          
-    print("done in %fs" % (time() - tnought))
-    print()
-if feature_names:
-    feature_names=np.asarray(feature_names)
-
-TargetClasses=Categories  
-
-print(X_train_new)
 
 
-
+#SVM
 from sklearn.svm import LinearSVC
-classifier=LinearSVC(multi_class='ovr',random_state=0)
-classifier.fit(X_train_new,Y_train)
+classifiersvm=LinearSVC(multi_class='ovr',random_state=0)
+classifiersvm.fit(X_train_new,Y_train)
 
-Y_pred=classifier.predict(X_test_new)
+Y_predsvm=classifiersvm.predict(X_test_new)
 
 from sklearn.metrics import confusion_matrix
-cm=confusion_matrix(Y_test,Y_pred)
+cmsvm=confusion_matrix(Y_test,Y_predsvm)
 
 from sklearn import metrics
-
-score =metrics.accuracy_score(Y_test, Y_pred)
-print("accuracy:   %0.3f" % score)
+scoresvm=metrics.accuracy_score(Y_test, Y_predsvm)
+print("accuracy:   %0.3f" % scoresvm)
 
 from sklearn.metrics import classification_report
+print(classification_report(Y_test,Y_predsvm,target_names=Categories))
 
-print(classification_report(Y_test,Y_pred,target_names=Categories))
+#RandomForest
+from sklearn.ensemble import RandomForestClassifier
+classifierrf=RandomForestClassifier(n_estimators=10 , criterion='entropy' ,random_state=0)
+classifierrf.fit(X_train_new,Y_train)
+
+Y_predrf=classifierrf.predict(X_test_new)
+
+from sklearn.metrics import confusion_matrix
+cmrf=confusion_matrix(Y_test,Y_predrf)
+
+from sklearn import metrics
+scorerf=metrics.accuracy_score(Y_test, Y_predrf)
+print("accuracy:   %0.3f" % scorerf)
+
+from sklearn.metrics import classification_report
+print(classification_report(Y_test,Y_predrf,target_names=Categories))
+
+def make_meshgrid(x, y, h=.02):
+    """Create a mesh of points to plot in
+
+    Parameters
+    ----------
+    x: data to base x-axis meshgrid on
+    y: data to base y-axis meshgrid on
+    h: stepsize for meshgrid, optional
+
+    Returns
+    -------
+    xx, yy : ndarray
+    """
+    x_min, x_max = x.min() - 1, x.max() + 1
+    y_min, y_max = y.min() - 1, y.max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    return xx, yy
 
 
+def plot_contours(ax, clf, xx, yy, **params):
+    """Plot the decision boundaries for a classifier.
 
+    Parameters
+    ----------
+    ax: matplotlib axes object
+    clf: a classifier
+    xx: meshgrid ndarray
+    yy: meshgrid ndarray
+    params: dictionary of params to pass to contourf, optional
+    """
+    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    out = ax.contourf(xx, yy, Z, **params)
+    return out
+
+titles = ('SVC with linear kernel')
+
+fig = plt.figure(figsize=(11,6))
+
+X0, X1 = X_train_new[:, 0], X_train_new[:, 1]
+xx, yy = make_meshgrid(X0, X1)
+
+for clf, title, ax in zip(classifier, titles, sub.flatten()):
+    plot_contours(ax, clf, xx, yy,
+                  cmap=plt.cm.coolwarm, alpha=0.8)
+    ax.scatter(X0, X1, c=y, cmap=plt.cm.coolwarm, s=20, edgecolors='k')
+    ax.set_xlim(xx.min(), xx.max())
+    ax.set_ylim(yy.min(), yy.max())
+    ax.set_xlabel('Sepal length')
+    ax.set_ylabel('Sepal width')
+    ax.set_xticks(())
+    ax.set_yticks(())
+    ax.set_title(title)
+
+plt.show()
 
 # Visualising the Training set results
 from matplotlib.colors import ListedColormap
@@ -275,31 +320,6 @@ plt.title('SVM (Training set)')
 plt.xlabel('Questions')
 plt.ylabel('Tag')
 plt.legend()
-plt.show()
-
-indices = np.arange(len())
-
- = [[x[i] for x in results] for i in range(4)]
-
-clf_names, score, training_time, test_time = 
-training_time = np.array(training_time) / np.max(training_time)
-test_time = np.array(test_time) / np.max(test_time)
-
-plt.figure(figsize=(12, 8))
-plt.title("Score")
-plt.barh(indices, score, .2, label="score", color='navy')
-plt.barh(indices + .3, training_time, .2, label="training time",
-         color='c')
-plt.barh(indices + .6, test_time, .2, label="test time", color='darkorange')
-plt.yticks(())
-plt.legend(loc='best')
-plt.subplots_adjust(left=.25)
-plt.subplots_adjust(top=.95)
-plt.subplots_adjust(bottom=.05)
-
-for i, c in zip(indices, clf_names):
-    plt.text(-.3, i, c)
-
 plt.show()
 
 # Visualising the Test set results
