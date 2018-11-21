@@ -20,6 +20,25 @@ import matplotlib.pyplot as plt
 Questions=pd.read_csv('Questions.csv',encoding='latin-1')
 TagData=pd.read_csv('Tags.csv',encoding='latin-1')
 
+def plot_tags(tagCount):
+    
+    x,y = zip(*tagCount)
+
+    colormap = plt.cm.gist_ncar #nipy_spectral, Set1,Paired  
+    colors = [colormap(i) for i in np.linspace(0, 0.8,50)]   
+
+    area = [i/4000 for i in list(y)]   # 0 to 15 point radiuses
+    plt.figure(figsize=(10,6))
+    plt.ylabel("Number of question associations")
+    for i in range(len(y)):
+        plt.plot(i,y[i], marker='o', linestyle='',ms=area[i],label=x[i])
+
+    plt.legend(numpoints=1)
+    plt.show()
+import collections
+tagCount =  collections.Counter(list(TagData['Tag'])).most_common(10)
+print(tagCount)
+plot_tags(tagCount)
 
 def text_clean(text):
     global Blank
