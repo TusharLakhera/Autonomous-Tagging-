@@ -247,6 +247,24 @@ print("accuracy:   %0.3f" % scorerf)
 from sklearn.metrics import classification_report
 print(classification_report(Y_test,Y_predrf,target_names=Categories))
 
+#NaiveBayes
+
+from sklearn.naive_bayes import GaussianNB as nb
+classifiernb=nb()
+classifiernb.fit(X_train_new,Y_train)
+Y_predrf=classifierrf.predict(X_test_new)
+
+from sklearn.metrics import confusion_matrix
+cmnb=confusion_matrix(Y_test,Y_prednb)
+
+from sklearn import metrics
+scorenb=metrics.accuracy_score(Y_test, Y_prednb)
+print("accuracy:   %0.3f" % scorenb)
+
+from sklearn.metrics import classification_report
+print(classification_report(Y_test,Y_prednb,target_names=Categories))
+
+
 def make_meshgrid(x, y, h=.02):
     """Create a mesh of points to plot in
 
